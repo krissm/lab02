@@ -1,0 +1,98 @@
+todo
+Rule 1 - Make Fewer HTTP Requests (eliminating unnecessary http requests)
+pg. 31-36: 	imag maps - reduce the number of components in order to reduce the number of HTTP requests.
+			CSS sprites -
+			inline images - 
+
+pg. 36-38 : combine scrips into one file and stylesheets into one file
+			 build them into modules esp onload and post-onload modules
+
+Rule 2 - Use a Content Delivery Network (improve response time by bringing the http request closer to the user
+pg. 39-42 : deploy content across multiple, geographically dispersed servers. 
+			use 'content delivery networks' (CDN) to disperse the 'component web servers' (static content only)
+
+Rule 3 - Add an Expires Header (eliminating unnecessary http requests)
+pg. 43-50	: add an 'expires' header to make components chacheable (for http/1.0)
+			should be used on all components that changes infrequetly inc. scripts, stylesheets, and Flash
+			reduces the number of HTTP requests and dereases the size of HTTP responses
+			Cache-Control (for http/1.1) does not depend on clock synchronization between server and client and does not require a new date once it expires
+			mod_expires let you use an Expire header that sets the date in a relative fashion similar to max-age
+			to ensure users get the latest version of a component, change the component's filename in all of your HTML pages when they change. Use a php variable for all your component filenames so that you can change all references in one place
+
+Rule 4 - Gzip Components (reduces response time by reducing the size of the http response)			
+pg. 50-57 : other ways to reduce size is striping comments and shorten urls, but they are typically less effective and require more work
+			web clients indicate support with 'Accept-Encoding' header
+			web server sees this header and may use one of the methods listed, then notifies client via the 'Content-Encoding' header in response
+			gzip is free format and is almost always used (an alt. is deflate but is not as good)
+			images and pdf files should not be qzipped because they are already compressed.
+			qzipping takes additional CPU cycles on the server to compress and client to decompress
+			generaly it is worth gzipping any file greater than 1 or 2 k. teh mod_gzip_minimum_file_size controls the minimum file size you're willin gto compress
+			qzip generally reduces the respone size by about 70%
+			Apache 2.x config for gzip: mod_deflate module
+			'AddOutputFilterByType DEFLATE text/html text/css application/x-javascrippt'
+						
+Rule 5 : Put Stylesheets at the Top using the 'link' tag
+pg. 58-65	putting stylesheets near the bottom of the document prohiits progressive rendering in many browsers.
+			
+			
+Rule 6: Put Scripts at the Bottom
+pg. 66- 71 
+		This enables progressive rendering (since content below the script is blocked from rendering)
+		and achieves greater download parallelization (since parallel downloading is disabled while a script is downloading (even on different hostnames)
+		(one reason for this is that script may use 'document.write to alter the page content)
+		(another is that if multiple scripts were downloaded in parallel, there is no guarantee the respnses would arrive in the order specified)
+		By putting script at the bottom contents aren't blocked from rendering,
+		and teh viewable components in the page are downloaded as early as possible. 
+		it might not be a good idea to put the script at the bottom if you use 'document.write' to insert part of the page's content
+		
+Rule 7: Avoid CSS Expressions
+pg. 72-75
+
+Rule 8: Make JavaScript and CSS External
+pg. 76-83 	inline is genaraly faster than external due to multiple http requests 
+			but because of cacheing external can get quicker
+			if every page uses the same js and CSS external files will result in a high reuse rate 
+			(the risk is that if you change any code the whole file need to be redownloaded and also the first visit will take longer )
+			a compromize is to categorize your pages into a handul of page types and then create a single script and css for each one
+			3 metrics are to help you make a decision is 'page views', empty vs primed cache, and 'component reuse'
+			the fasest alt. is generaly external files with far future Expire headers
+			the only exception is with homepages because many browsers empty cache when browser closes and the homepage is only visited once
+			you can get the best of both worlds by useing inline for the first page view and external files for all secondary page views. see pg. 80-
+			
+Rule 9 : Reduce DNS Lookups by using 'Keep-Alive' and fewer domains
+pg. 84-89 	DNS lookups are cached on ISP servers or local area network for better performance
+			but we can cache DNS localy on the operating system's DNS cache (DNS Client service on Microsoft Windows)
+			most browsers also have their cache and only after the browser discards the cache does it ask teh operating system for the address. if it doesn't exist it sends it to a remot server which is where the slow down happens
+			The DNS record returned from lookup contains a time-to-live (TTL) value. operating systems respect it while browser often do not.
+			'Keep-Alive' connection persists and a DNS lookup is not required for each call
+			Reducing the number of unique hostnames reduces the number of DNS lookups
+		
+Rule 10 : Minify JavaScript
+pg. 90-96		reduces white spaces and comments
+			'obfuscation' also convert variable names into smaller strings. Make it more difficult to reverse-engineer the code, but also harder to debug and risk introducing errors
+			CSS can be minified as well but there are generally less savings due to less comments and white spaces in CSS. Insted optimize CSS by merging identical classes, remove unused classes, etc. 
+			
+Rule 11 : Avoid Redirects
+pg. 97-			if you fail to have a trailing / a redirect will happen automatically which adds one except on hostnames
+				if the backend is rewritten URLs in the new implementation might be different, or connecting different parts of a website and directing the user based on certain conditions e.g. type of browser, type of user account, etc see pg. 102 for better solutions
+				redirects are often used to track the flow of user traffic see pg. 103 for better solutions
+				also used to make prettier and easier to remember URLs
+				Alias, mod_rewrite, DiretorySlash are all solutions to use instead of redirects
+				
+Rule 12 : Rmove Duplicate Scripts
+pg. 106-109
+
+Rule 13 : Configure or Remove ETags (entity tag)
+pg. 110-116		the ETag header thwarts caching when a web site is hosted on more than one server. 
+				they typically are constructed using attributes that make them unique to a specific server hosting a site.
+				this etag issue also degrades the effectiveness of proxy chaches
+				
+Rule 14 : Make Ajax Cacheable
+pg. 117-		passive request are made in anticipation of a future need
+				active requests are made based on the user's current actions
+				(the user may still be kept waiting for the response but users won't have to endure a complete page reload, 
+				but the UI is still responsive while the user waits.)
+				To improve performance, it's important to optimize these requests. start with the active requests since they have greater impact on the user experience
+				The most important way to improve performance is to make responses cacheable (rule 3)
+				Rule 4: Gzip Components, Rule 9: Reduce DNS Lookups, Rule 10: Minify JavaScript, Rule 11: Avoid Redirects, Rule 13: ETags—Use ’Em or Lose ’Em are also applicable to Ajax requests
+				SSL protocol are cacheable (only for the current browser session in Firefix)
